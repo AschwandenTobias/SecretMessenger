@@ -257,22 +257,28 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
 
     if (buttonState1 != lastButtonState1) {
       if (buttonState1 == LOW) {
-        char selectedChar;
-        if (upperCase) {
-          selectedChar = charactersLowercase[j][0];
+        if(j == 43) {
+          keyboardMode = false;
+          displayChat();
         } else {
-          selectedChar = characters[j][0];
+          char selectedChar;
+          if (upperCase) {
+            selectedChar = charactersLowercase[j][0];
+          } else {
+            selectedChar = characters[j][0];
+          }
+
+          // Add the selected character to the message
+          message[messageIndex] = selectedChar;
+          messageIndex++;
+          message[messageIndex] = '\0'; // Ensure null-terminated
+
+          drawString("Your message: ", 20, 20);
+          drawString(message, 200, 20);
+
+          lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
         }
 
-        // Add the selected character to the message
-        message[messageIndex] = selectedChar;
-        messageIndex++;
-        message[messageIndex] = '\0'; // Ensure null-terminated
-
-        drawString("Your message: ", 20, 20);
-        drawString(message, 200, 20);
-
-        lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
       }
       lastButtonState1 = buttonState1; // Update lastButtonState1
     }
