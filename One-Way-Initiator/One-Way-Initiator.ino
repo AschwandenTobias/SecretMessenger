@@ -26,7 +26,10 @@ bool message_Handler = false;
 bool chatMode = false;
 bool keyboardMode = false;
 
-// MAC Address of responder - edit as required
+const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "CAPS", "ENTER", "EXIT"};
+const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
+
+char message[64];// MAC Address of responder - edit as required
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 // Define a data structure
@@ -203,11 +206,9 @@ void selectMessage() {
 }
 
 void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
-  sprite.fillSprite(TFT_BLACK);
+  //sprite.fillRect(10,30,600,600,TFT_BLACK);
   sprite.setTextColor(TFT_WHITE);
 
-  const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "CAPS", "ENTER", "EXIT"};
-  const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
 
   int arraySize = sizeof(characters) / sizeof(characters[0]);
   sprite.drawString("Your message: ", 20, 20, 4);
@@ -239,36 +240,50 @@ void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
 }
 
 
-void selectKeyboard(int32_t j, uint16_t color, bool isUpperCase) {
+void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
+  int messageIndex = 0;
   while (keyboardMode) {
     buttonState2 = digitalRead(buttonPin2);
     buttonState1 = digitalRead(buttonPin1);
 
-    if (buttonState2 != lastButtonState2) {
-      if (buttonState2 == LOW) {
-        j++;
-        if (j > 42) {
-          j = 0;
-        }
-        displayKeyboard(j, TFT_RED, false);
+    if (buttonState2 == LOW) {
+      j++;
+      if (j > 43) {
+        j = 0;
       }
-      lastButtonState2 = buttonState2; // Update lastButtonState2
+      displayKeyboard(j, TFT_RED, false);
+      delay(100); // Add a small delay to control the speed of movement
     }
 
     if (buttonState1 != lastButtonState1) {
       if (buttonState1 == LOW) {
-        keyboardMode = false;
-        displayChat();
+        char selectedChar;
+        if (upperCase) {
+          selectedChar = charactersLowercase[j][0];
+        } else {
+          selectedChar = characters[j][0];
+        }
+
+        // Add the selected character to the message
+        message[messageIndex] = selectedChar;
+        messageIndex++;
+        message[messageIndex] = '\0'; // Ensure null-terminated
+
+        drawString("Your message: ", 20, 20);
+        drawString(message, 200, 20);
+
+        lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
       }
       lastButtonState1 = buttonState1; // Update lastButtonState1
     }
 
-    delay(100);
+    delay(10);
   }
 }
 
 void writeOwnMessage() {
   keyboardMode = true;
+  sprite.fillSprite(TFT_BLACK);
   displayKeyboard(0, TFT_RED, false);
   delay(500);
   selectKeyboard(0 , TFT_RED, false);
