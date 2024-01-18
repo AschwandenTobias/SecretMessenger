@@ -1,13 +1,3 @@
-/*
-  ESP-NOW Demo - Transmit
-  esp-now-demo-xmit.ino
-  Sends data to Responder
-  
-  DroneBot Workshop 2022
-  https://dronebotworkshop.com
-*/
-
-// Include Libraries
 #include <esp_now.h>
 #include <WiFi.h>
 #include "rm67162.h"
@@ -31,25 +21,26 @@ int int_value;
 float float_value;
 bool bool_value = true;
 
-bool mode_Handler = false;
+bool menuMode = false;
 bool message_Handler = false;
+bool chatMode = false;
+bool keyboardMode = false;
 
 // MAC Address of responder - edit as required
-uint8_t broadcastAddress[] = {0xEC, 0xDA, 0x3B, 0x9A, 0x41, 0x68};
+uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 // Define a data structure
 typedef struct struct_message {
   char a[32];
-  int b;
-  float c;
-  bool d;
+  bool isSend;
 } struct_message;
 
-const char* predefinedMessages[] = {"Bring mir Cola aus dem Coop mit", "Bring mir ein Mate mit", "Habe Lust auf Salziges...", "Schoggi pls <3", "Brauche nix danke!"};
+
+char* predefinedMessages[] = {"Bring mir Cola aus dem Coop mit", "Bring mir ein Mate mit", "Habe Lust auf Salziges...", "Schoggi pls <3", "Brauche nix danke!"};
 int j = 0;
 String selectedMessage;
 
-const char* predefinedModes[] = {"Send predefined message", "Write your own message", "Send Picture", "Something"};
+char* predefinedModes[] = {"Send predefined message", "Write your own message", "Send Picture", "Exit"};
 int z = 0;
 String selectedMode;
 
@@ -58,8 +49,11 @@ TFT_eSprite sprite = TFT_eSprite(&tft);
 
 // Create a structured object
 struct_message myData;
-const char* secretMessages[] = {"Secret Sauce!", "Very HOT!", "Spicey ;)", "Ohhh Yeah :p", "Se yellow from se egg", "Oh my gosh did you see that?"};
+//const char* secretMessages[] = {"Secret Sauce!", "Very HOT!", "Spicey ;)", "Ohhh Yeah :p", "Se yellow from se egg", "Oh my gosh did you see that?"};
 int i = 0;
+
+struct_message chat[10];
+int freeSlot = 0;
 
 // Peer info
 esp_now_peer_info_t peerInfo;
@@ -148,14 +142,22 @@ void sendSelectedMessage(const String& message) {
   char messageBuffer[32];
   message.toCharArray(messageBuffer, 32);
 
+  struct_message newMessage;
+
+  // Copy the message to the newMessage.a
+  strncpy(newMessage.a, message.c_str(), 32);
+  newMessage.a[32 - 1] = '\0'; // Ensure null-terminated
+
+  // Set the isSend flag to true
+  newMessage.isSend = true;
+  // Store the newMessage in the chat array
+  chat[freeSlot] = newMessage;
+
+  // Increment the freeSlot index
+  freeSlot++;
   // Format structured data
   strcpy(myData.a, messageBuffer);
-  int_value = random(1, 20);
-  float_value = 1.3 * int_value;
-  bool_value = !bool_value;
-  myData.b = int_value;
-  myData.c = float_value;
-  myData.d = bool_value;
+  myData.isSend = true;
 
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t*)&myData, sizeof(myData));
@@ -166,16 +168,11 @@ void sendSelectedMessage(const String& message) {
   if (result == ESP_OK) {
     Serial.println("Sending confirmed");
     drawString(myData.a, 20, 60);
-    draw(myData.b, 20, 100);
-    draw(myData.c, 20, 140);
-    draw(myData.d, 20, 180);
   } else {
     Serial.println("Sending error");
     draw("Error trying to send...", 20, 60);
   }
-
-  // Add a delay to prevent multiple sends on a single button press
-  delay(1000);
+  delay(100);
 }
 
 void selectMessage() {
@@ -197,37 +194,156 @@ void selectMessage() {
       if (buttonState1 == LOW) {
         selectedMessage = predefinedMessages[j];
         sendSelectedMessage(selectedMessage);
-        delay(4000);
+        delay(50);
         message_Handler = false;
       }
     }
-    delay(200); // Add a small delay to debounce the buttons
+    delay(100);
   }
+}
+
+void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
+  sprite.fillSprite(TFT_BLACK);
+  sprite.setTextColor(TFT_WHITE);
+
+  const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "CAPS", "ENTER", "EXIT"};
+  const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
+
+  int arraySize = sizeof(characters) / sizeof(characters[0]);
+  sprite.drawString("Your message: ", 20, 20, 4);
+  int x = 20;  // Initial x-coordinate
+  int y = 60;  // Initial y-coordinate
+
+  for (int i = 0; i < arraySize; i++) {
+    sprite.setTextColor((i == j) ? color : TFT_WHITE);
+    if(upperCase) {
+      sprite.drawString(String(charactersLowercase[i]), x, y, 4);
+    }
+    sprite.drawString(String(characters[i]), x, y, 4);
+
+    // Adjust x-coordinate based on the position of the string
+    if (i >= arraySize - 3) {
+      x += 100; // Enough space for the last three strings
+    } else if (i > 40) {
+      x += 60;
+    } else {
+      x += 40;
+    }
+
+    if (x >= 536) {
+      x = 20;  // Reset x-coordinate
+      y += 40; // Move to the next line
+    }
+  }
+  lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+}
+
+
+void selectKeyboard(int32_t j, uint16_t color, bool isUpperCase) {
+  while (keyboardMode) {
+    buttonState2 = digitalRead(buttonPin2);
+    buttonState1 = digitalRead(buttonPin1);
+
+    if (buttonState2 != lastButtonState2) {
+      if (buttonState2 == LOW) {
+        j++;
+        if (j > 42) {
+          j = 0;
+        }
+        displayKeyboard(j, TFT_RED, false);
+      }
+      lastButtonState2 = buttonState2; // Update lastButtonState2
+    }
+
+    if (buttonState1 != lastButtonState1) {
+      if (buttonState1 == LOW) {
+        keyboardMode = false;
+        displayChat();
+      }
+      lastButtonState1 = buttonState1; // Update lastButtonState1
+    }
+
+    delay(100);
+  }
+}
+
+void writeOwnMessage() {
+  keyboardMode = true;
+  displayKeyboard(0, TFT_RED, false);
+  delay(500);
+  selectKeyboard(0 , TFT_RED, false);
+}
+
+void selectMenu() {
+  while(menuMode) {
+    buttonState2 = digitalRead(buttonPin2);
+    buttonState1 = digitalRead(buttonPin1);
+
+    if (buttonState2 != lastButtonState2) {
+      if (buttonState2 == LOW) {
+        j++;
+        if (j >= 4) {
+          j = 0;
+        }
+        displayMenu(j, TFT_RED, 4, predefinedModes);
+      }
+    }
+    if (buttonState1 != lastButtonState1) {
+      if (buttonState1 == LOW) {
+        menuMode = false;
+        if(j == 0) {
+          messageHandler();
+        }
+        if(j == 1) {
+          writeOwnMessage();
+        }
+        if(j == 2) {
+
+        }
+        if(j == 3) {
+          displayChat();
+        }
+      }
+    }
+    delay(100);
+  }
+}
+
+void displayMenu(int32_t selected, uint16_t color, int32_t menuSize, char** menuItems) {
+  sprite.fillSprite(TFT_BLACK);
+  for(int i = 0; i < menuSize; i++) {
+    if(i == selected) {
+      sprite.setTextColor(color);
+    }
+    sprite.drawString(menuItems[i], 20, i * 40 + 20, 4);
+    sprite.setTextColor(TFT_WHITE);
+    lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+  }
+}
+
+void displayChat() {
+  chatMode = true;
+  sprite.fillSprite(TFT_BLACK);
+  sprite.setTextColor(TFT_WHITE);
+  for (int i = 0; i < freeSlot; i++) {
+    int32_t x = (chat[i].isSend) ? 300 : 20;
+    sprite.drawString(chat[i].a, x, i * 40 + 20, 4);
+  }
+  lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
 }
 
 void messageHandler() {
   message_Handler = true;
-  displayPredefinedMessages(0, TFT_RED);
-  delay(1000);
+  displayMenu(0, TFT_RED, 5, predefinedMessages);
+  delay(500);
   selectMessage();
 }
 
-void modeHandler() {
-  mode_Handler = true;
-  displayModeOptions(0, TFT_RED);
-  delay(1000);
-}
-
-void displayModeOptions(int32_t j, uint16_t color) {
-  sprite.fillSprite(TFT_BLACK);
-  for(int i = 0; i < 5; i++) {
-    if(j == i) {
-      sprite.setTextColor(color);
-    }
-    sprite.drawString(predefinedModes[i], 20, i * 40 + 20, 4);
-    sprite.setTextColor(TFT_WHITE);
-    lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
-  }
+void mainMenu() {
+  menuMode = true;
+  displayMenu(0, TFT_RED, 4, predefinedModes);
+  delay(500);
+  selectMenu();
 }
 
 void loop() {
@@ -237,50 +353,15 @@ void loop() {
 
   if(buttonState2 != lastButtonState2) {
     if(buttonState2 == LOW && message_Handler == false) {
-      //modeHandler();
-      messageHandler();
+      mainMenu();
     }
   }
   // Check if the button state has changed
   if (buttonState1 != lastButtonState1 && message_Handler == false) {
-    // If the button is pressed (LOW), send the message
     if (buttonState1 == LOW) {
-      // Create test data
-      int_value = random(1, 20);
-      float_value = 1.3 * int_value;
-      bool_value = !bool_value;
-
-      // Format structured data
-      strcpy(myData.a, secretMessages[i]);
-      myData.b = int_value;
-      myData.c = float_value;
-      myData.d = bool_value;
-
-      // Send message via ESP-NOW
-      esp_err_t result = esp_now_send(broadcastAddress, (uint8_t*)&myData, sizeof(myData));
-
-      // Display the result
-      clear_all();
-      drawString("Sent Message:", 20, 20);
-      if (result == ESP_OK) {
-        Serial.println("Sending confirmed");
-        drawString(myData.a, 20, 60);
-        draw(myData.b, 20, 100);
-        draw(myData.c, 20, 140);
-        draw(myData.d, 20, 180);
-      } else {
-        Serial.println("Sending error");
-        draw("Error trying to send...", 20, 60);
-      }
-      i++;
-      if(i > 5) {
-        i = 0;
-      }
-      // Add a delay to prevent multiple sends on a single button press
-      delay(1000);
-    }
+      displayChat();
+    } 
     lastButtonState2 = buttonState2;
-    // Update the last button state
     lastButtonState1 = buttonState1;
   }
 }
