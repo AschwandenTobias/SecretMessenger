@@ -206,7 +206,6 @@ void selectMessage() {
 }
 
 void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
-  //sprite.fillRect(10,30,600,600,TFT_BLACK);
   sprite.setTextColor(TFT_WHITE);
 
 
@@ -219,8 +218,9 @@ void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
     sprite.setTextColor((i == j) ? color : TFT_WHITE);
     if(upperCase) {
       sprite.drawString(String(charactersLowercase[i]), x, y, 4);
+    } else {
+      sprite.drawString(String(characters[i]), x, y, 4);
     }
-    sprite.drawString(String(characters[i]), x, y, 4);
 
     // Adjust x-coordinate based on the position of the string
     if (i >= arraySize - 3) {
@@ -251,7 +251,7 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
       if (j > 43) {
         j = 0;
       }
-      displayKeyboard(j, TFT_RED, false);
+      displayKeyboard(j, TFT_RED, upperCase);
       delay(100); // Add a small delay to control the speed of movement
     }
 
@@ -260,6 +260,15 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
         if(j == 43) {
           keyboardMode = false;
           displayChat();
+        } else if (j == 42) {
+          keyboardMode = false;
+          String messageString(message);
+          sendSelectedMessage(messageString);
+          displayChat();
+        } else if (j == 41) {
+          upperCase = !upperCase;
+          sprite.fillRect(10,50,600,600,TFT_BLACK);
+          displayKeyboard(41, TFT_RED, upperCase);
         } else {
           char selectedChar;
           if (upperCase) {
@@ -296,6 +305,7 @@ void writeOwnMessage() {
 }
 
 void selectMenu() {
+  //j = 0;
   while(menuMode) {
     buttonState2 = digitalRead(buttonPin2);
     buttonState1 = digitalRead(buttonPin1);
@@ -347,7 +357,7 @@ void displayChat() {
   sprite.fillSprite(TFT_BLACK);
   sprite.setTextColor(TFT_WHITE);
   for (int i = 0; i < freeSlot; i++) {
-    int32_t x = (chat[i].isSend) ? 300 : 20;
+    int32_t x = (chat[i].isSend) ? 200 : 20;
     sprite.drawString(chat[i].a, x, i * 40 + 20, 4);
   }
   lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
@@ -361,9 +371,10 @@ void messageHandler() {
 }
 
 void mainMenu() {
+  j = 0;
   menuMode = true;
   displayMenu(0, TFT_RED, 4, predefinedModes);
-  delay(500);
+  delay(250);
   selectMenu();
 }
 
