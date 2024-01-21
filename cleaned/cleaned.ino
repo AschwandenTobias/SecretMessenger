@@ -2,9 +2,23 @@
 #include <WiFi.h>
 #include "rm67162.h"
 #include <TFT_eSPI.h>
+#include <string>
 
 #include "config.h"
 #include "buttons.h"
+#include "image.h"
+
+
+int imageW=240;
+int imageH=240;
+
+int screenW=536;
+int screenH=240;
+int m=imageW;
+
+char str[12];
+
+unsigned short imageS[57600]={0}; // edit this screenW * screen H
 
 
 //const char* secretMessages[] = {"Secret Sauce!", "Very HOT!", "Spicey ;)", "Ohhh Yeah :p", "Se yellow from se egg", "Oh my gosh did you see that?"};
@@ -19,7 +33,11 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 // Callback function executed when data is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&received_message, incomingData, sizeof(received_message));
-  add_to_chat(received_message);
+  if (received_message.isImage) {
+    displayImage(received_message.a[0] - '0');
+  } else {
+    add_to_chat(received_message);
+  }
 }
 
 void clear_all() {
@@ -42,6 +60,32 @@ void draw(const bool value, int32_t x, int32_t y) {
   drawString(String(value ? "True" : "False"), x, y);
 }
 
+void displayImage(int id) {
+  int pos=0;
+  int x=0;
+  int y=0;
+  int changeX=1;
+  int changeY=1;
+  int start;
+
+  pos = x + imageW * y;
+  start = pos;
+  m = screenW + pos;
+  for (int i = 0; i < screenW * screenH; i++) {
+    if (start % m == 0) {
+      start = start + (imageW - screenW);
+      m = m + imageW;
+    }
+    imageS[i] = picture[0][start]; // Replace with Picture ID
+    start++;
+
+  }
+
+  sprite.pushImage(0, 0, screenW, screenH, imageS);
+  lcd_PushColors(0, 0, 536, 240, (uint16_t *)sprite.getPointer());
+
+}
+
 void displayPredefinedMessages(int32_t j, uint16_t color) {
   sprite.fillSprite(TFT_BLACK);
   for(int i = 0; i < 5; i++) {
@@ -54,10 +98,38 @@ void displayPredefinedMessages(int32_t j, uint16_t color) {
   }
 }
 
+void displayPredefinedImages(int32_t j, uint16_t color) {
+  clear_all();
+  for(int i = 0; i < 3; i++) {
+    if(j == i) {
+      sprite.setTextColor(color);
+    }
+    sprite.drawString(predefinedImageNames[i], 20, i * 40 + 20, 4);
+    sprite.setTextColor(TFT_WHITE);
+    lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+  }
+}
+
 void add_to_chat(struct_message msg) {
   chat[freeSlot] = msg;
   freeSlot++;
   displayChat();
+}
+
+void sendSelectedImage(char* msg) {
+
+  // Prepare Message to be sent...
+  strcpy(message_to_send.a, msg);
+  message_to_send.isSend = false;
+  message_to_send.isImage = true;
+
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t*)&message_to_send, sizeof(message_to_send));
+  if (result == ESP_OK) {
+    Serial.println("Sending confirmed");
+  } else {
+    Serial.println("Sending error");
+  }
 }
 
 void sendSelectedMessage(const String& message) {
@@ -68,6 +140,7 @@ void sendSelectedMessage(const String& message) {
   // Prepare Message to be sent...
   strcpy(message_to_send.a, messageBuffer);
   message_to_send.isSend = false;
+  message_to_send.isImage = false;
 
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t*)&message_to_send, sizeof(message_to_send));
@@ -88,6 +161,7 @@ void sendSelectedMessage(const String& message) {
 }
 
 void selectMessage() {
+  j = 0;
   while (true) {
     if (pressed_top_button()) {
       j++;
@@ -99,6 +173,27 @@ void selectMessage() {
 
     if (pressed_bottom_button() || hold_down_bottom_button()) {
       sendSelectedMessage(predefinedMessages[j]);
+      break;
+    }
+    delay(100);
+  }
+}
+
+void selectImages() {
+  j = 0;
+  while (true) {
+    if (pressed_top_button()) {
+      j++;
+      if (j >= 3) {
+        j = 0;
+      }
+      displayPredefinedImages(j, TFT_RED);
+    }
+
+    if (pressed_bottom_button() || hold_down_bottom_button()) {
+      int num = j;
+      sprintf(str, "%d", num);
+      sendSelectedImage(str);
       break;
     }
     delay(100);
@@ -166,6 +261,7 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
         upperCase = !upperCase;
         sprite.fillRect(10,50,600,600,TFT_BLACK);
         displayKeyboard(41, TFT_RED, upperCase);
+        delay(200);
       } else {
         char selectedChar;
         if (upperCase) {
@@ -183,9 +279,9 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
         drawString(message, 200, 20);
 
         lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+        delay(200);
       }
     }
-    delay(10);
   }
 }
 
@@ -198,7 +294,7 @@ void writeOwnMessage() {
 }
 
 void selectMenu() {
-  //j = 0;
+  j = 0;
   while(true) {
     if (pressed_top_button()) {
       j++;
@@ -217,7 +313,7 @@ void selectMenu() {
         break;
       }
       if (j == 2) {
-        // Send Picture();
+        imageHandler();
         break;
       }
       if (j == 3) {
@@ -256,6 +352,12 @@ void messageHandler() {
   displayMenu(0, TFT_RED, 5, predefinedMessages);
   delay(200);
   selectMessage();
+}
+
+void imageHandler() {
+  displayMenu(0, TFT_RED, 3, predefinedImageNames);
+  delay(200);
+  selectImages();
 }
 
 void mainMenu() {

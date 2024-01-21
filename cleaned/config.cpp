@@ -13,8 +13,10 @@ const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K
 const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
 
 char* predefinedMessages[] = {"Bring mir Cola aus dem Coop mit", "Bring mir ein Mate mit", "Habe Lust auf Salziges...", "Schoggi pls <3", "Brauche nix danke!"};
+char* predefinedImageNames[] = {"Cat1", "Cat2", "Cat3"};
 int j = 0;
 String selectedMessage;
+String selectedImages;
 
 char* predefinedModes[] = {"Send predefined message", "Write your own message", "Send Picture", "Exit"};
 int z = 0;

@@ -52,7 +52,7 @@ TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite sprite = TFT_eSprite(&tft);
 
 // Create a structured object
-struct_message myData;
+struct_message sendData;
 struct_message received;
 //const char* secretMessages[] = {"Secret Sauce!", "Very HOT!", "Spicey ;)", "Ohhh Yeah :p", "Se yellow from se egg", "Oh my gosh did you see that?"};
 int i = 0;
@@ -75,9 +75,13 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.print("Data received: ");
 
   clear_all();
+  received.isSend = false;
+  chat[freeSlot] = received;
+  freeSlot++;
+  displayChat();
 
-  drawString("Received Message:", 20, 20);
-  drawString(received.a, 20, 60);
+  //drawString("Received Message:", 20, 20);
+  //drawString(received.a, 20, 60);
 }
 
 void clear_all() {
@@ -131,18 +135,18 @@ void sendSelectedMessage(const String& message) {
   // Increment the freeSlot index
   freeSlot++;
   // Format structured data
-  strcpy(myData.a, messageBuffer);
-  myData.isSend = true;
+  strcpy(sendData.a, messageBuffer);
+  sendData.isSend = true;
 
   // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t*)&myData, sizeof(myData));
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t*)&sendData, sizeof(sendData));
 
   // Display the result
   clear_all();
   drawString("Sent Message:", 20, 20);
   if (result == ESP_OK) {
     Serial.println("Sending confirmed");
-    drawString(myData.a, 20, 60);
+    drawString(sendData.a, 20, 60);
   } else {
     Serial.println("Sending error");
     draw("Error trying to send...", 20, 60);
@@ -272,7 +276,7 @@ void writeOwnMessage() {
   keyboardMode = true;
   sprite.fillSprite(TFT_BLACK);
   displayKeyboard(0, TFT_RED, false);
-  delay(500);
+  delay(200);
   selectKeyboard(0 , TFT_RED, false);
 }
 
@@ -297,13 +301,13 @@ void selectMenu() {
         if(j == 0) {
           messageHandler();
         }
-        if(j == 1) {
+        else if(j == 1) {
           writeOwnMessage();
         }
-        if(j == 2) {
+        else if(j == 2) {
 
         }
-        if(j == 3) {
+        else if(j == 3) {
           displayChat();
         }
       }
@@ -338,7 +342,7 @@ void displayChat() {
 void messageHandler() {
   message_Handler = true;
   displayMenu(0, TFT_RED, 5, predefinedMessages);
-  delay(500);
+  delay(200);
   selectMessage();
 }
 

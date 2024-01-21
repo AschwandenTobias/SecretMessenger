@@ -22,8 +22,10 @@ extern const char* charactersLowercase[];
 
 // Predefined messages
 extern char* predefinedMessages[];
+extern char* predefinedImageNames[];
 extern int j;
 extern String selectedMessage;
+extern String selectedImages;
 
 // Menu modes
 extern char* predefinedModes[];
@@ -40,10 +42,11 @@ extern uint8_t broadcastAddress[];
 
 // Structured data for messages
 typedef struct struct_message {
-  char id;
+  char isImage;
   char a[32];
   bool isSend;
 } struct_message;
+
 extern struct_message message_to_send;
 extern struct_message received_message;
 
