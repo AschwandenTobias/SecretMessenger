@@ -9,16 +9,18 @@
 #include "image.h"
 
 
-int imageW=240;
-int imageH=240;
+int imageW = 536;
+int imageH = 240;
 
 int screenW=536;
 int screenH=240;
 int m=imageW;
+int start = 1;
+
 
 char str[12];
 
-unsigned short imageS[57600]={0}; // edit this screenW * screen H
+unsigned short *imageS;  // Declare as a pointer
 
 
 //const char* secretMessages[] = {"Secret Sauce!", "Very HOT!", "Spicey ;)", "Ohhh Yeah :p", "Se yellow from se egg", "Oh my gosh did you see that?"};
@@ -66,24 +68,21 @@ void displayImage(int id) {
   int y=0;
   int changeX=1;
   int changeY=1;
-  int start;
 
   pos = x + imageW * y;
-  start = pos;
-  m = screenW + pos;
-  for (int i = 0; i < screenW * screenH; i++) {
-    if (start % m == 0) {
-      start = start + (imageW - screenW);
-      m = m + imageW;
+    start = pos;
+    m = screenW + pos;
+    for (int i = 0; i < screenW * screenH; i++) {
+        if (start % m == 0) {
+            start = start + (imageW - screenW);
+            m = m + imageW;
+        }
+        imageS[i] = picture[id][start];
+        start++;
     }
-    imageS[i] = picture[0][start]; // Replace with Picture ID
-    start++;
 
-  }
-
-  sprite.pushImage(0, 0, screenW, screenH, imageS);
-  lcd_PushColors(0, 0, 536, 240, (uint16_t *)sprite.getPointer());
-
+    sprite.pushImage(0, 0, screenW, screenH, imageS);
+    lcd_PushColors(0, 0, 536, 240, (uint16_t *)sprite.getPointer());
 }
 
 void displayPredefinedMessages(int32_t j, uint16_t color) {
@@ -407,6 +406,7 @@ void setup() {
     Serial.println("Failed to add peer");
     return;
   }
+  imageS = (unsigned short *)malloc(screenW * screenH * sizeof(unsigned short));
 }
 
 void loop() {
@@ -417,4 +417,9 @@ void loop() {
   if (pressed_bottom_button()) {
     displayChat();
   }
+}
+
+void cleanup() {
+    // Free the dynamically allocated memory when it's no longer needed
+    free(imageS);
 }
