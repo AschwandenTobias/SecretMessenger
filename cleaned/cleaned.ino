@@ -26,6 +26,10 @@ unsigned short *imageS;  // Declare as a pointer
 //const char* secretMessages[] = {"Secret Sauce!", "Very HOT!", "Spicey ;)", "Ohhh Yeah :p", "Se yellow from se egg", "Oh my gosh did you see that?"};
 int i = 0;
 
+
+unsigned long ledStartTime = 0; // Variable to store the start time of LED activation
+bool ledActive = false; // Variable to track LED state
+
 // Callback function called when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("\r\nLast Packet Send Status:\t");
@@ -39,6 +43,20 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
     displayImage(received_message.a[0] - '0');
   } else {
     add_to_chat(received_message);
+  }
+  /*led = 1;
+  ledActive = true;
+  ledStartTime = millis(); // Record the start time
+  led = !led;
+  digitalWrite(led_pin, led);
+  */
+}
+
+void handleLED() {
+  if (ledActive && (millis() - ledStartTime >= 2000)) {
+    // If 2 seconds have passed, turn off the LED
+    ledActive = false;
+    digitalWrite(led_pin, LOW);
   }
 }
 
@@ -99,7 +117,8 @@ void displayPredefinedMessages(int32_t j, uint16_t color) {
 
 void displayPredefinedImages(int32_t j, uint16_t color) {
   clear_all();
-  for(int i = 0; i < 3; i++) {
+  //sprite.fillSprite(TFT_BLACK);
+  for(int i = 0; i < 4; i++) {
     if(j == i) {
       sprite.setTextColor(color);
     }
@@ -190,7 +209,7 @@ void selectImages() {
   while (true) {
     if (pressed_top_button()) {
       j++;
-      if (j >= 3) {
+      if (j >= 4) {
         j = 0;
       }
       displayPredefinedImages(j, TFT_RED);
@@ -200,6 +219,7 @@ void selectImages() {
       int num = j;
       sprintf(str, "%d", num);
       sendSelectedImage(str);
+      displayChat();
       break;
     }
     delay(100);
@@ -207,10 +227,14 @@ void selectImages() {
 }
 
 void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
+  sprite.fillSprite(TFT_BLACK);
+  //sprite.fillRect(0, 40, 536, 240, TFT_BLACK);
   sprite.setTextColor(TFT_WHITE);
 
   int arraySize = 44;
-  sprite.drawString("Your message: ", 20, 20, 4);
+  char displayString[100];
+  sprintf(displayString, "Your message: %s", message);
+  sprite.drawString(displayString, 20, 20, 4);
   int x = 20;  // Initial x-coordinate
   int y = 60;  // Initial y-coordinate
 
@@ -256,12 +280,14 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
     if (pressed_bottom_button()) {
       if(j == 43) {
         keyboardMode = false;
+        delay(200);
         displayChat();
         break;
       } else if (j == 42) {
         keyboardMode = false;
         String messageString(message);
         sendSelectedMessage(messageString);
+        delay(200);
         break;
       } else if (j == 41) {
         upperCase = !upperCase;
@@ -281,9 +307,9 @@ void selectKeyboard(int32_t j, uint16_t color, bool upperCase) {
         messageIndex++;
         message[messageIndex] = '\0'; // Ensure null-terminated
 
-        drawString("Your message: ", 20, 20);
-        drawString(message, 200, 20);
-
+        //drawString("Your message: ", 20, 20);
+        //drawString(message, 200, 20);
+        displayKeyboard(j, TFT_RED, upperCase);
         lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
         delay(200);
       }
@@ -352,7 +378,7 @@ void displayChat() {
     if(chat[i].isSend) {
       sprite.setTextColor(TFT_GREEN);
     } else {
-      sprite.setTextColor(TFT_PINK);
+      sprite.setTextColor(TFT_MAGENTA);
     }
     sprite.drawString(chat[i].a, x, 240 - ((freeSlot - 1 - i) * 40 + 30), 4);
     sprite.setTextColor(TFT_WHITE);
@@ -367,7 +393,7 @@ void messageHandler() {
 }
 
 void imageHandler() {
-  displayMenu(0, TFT_RED, 3, predefinedImageNames);
+  displayMenu(0, TFT_RED, 4, predefinedImageNames);
   delay(200);
   selectImages();
 }
@@ -431,12 +457,15 @@ void setup() {
 }
 
 void loop() {
+  //handleLED();
   if (pressed_top_button()) {
     mainMenu();
   }
 
   if (pressed_bottom_button()) {
-    displayChat();
+    //displayChat();
+    //led = !led;
+    //digitalWrite(led_pin, led);
   }
 }
 

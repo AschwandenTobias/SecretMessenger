@@ -9,11 +9,13 @@ bool message_Handler = false;
 bool chatMode = false;
 bool keyboardMode = false;
 
+bool led = 0;
+
 const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "CAPS", "ENTER", "EXIT"};
 const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
 
 char* predefinedMessages[] = {"Bring mir Cola aus dem Coop mit", "Bring mir ein Mate mit", "Habe Lust auf Salziges...", "Schoggi pls <3", "Brauche nix danke!"};
-char* predefinedImageNames[] = {"Cat_Flower", "Cat_Sad", "Cat_Cute"};
+char* predefinedImageNames[] = {"Cat_Flower", "Cat_Sad", "Cat_Cute", "TheLegends"};
 int j = 0;
 String selectedMessage;
 String selectedImages;

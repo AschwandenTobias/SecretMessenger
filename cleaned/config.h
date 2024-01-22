@@ -10,6 +10,8 @@ extern const int bottom_button_pin;
 extern const int top_button_pin;
 extern const int led_pin;
 
+extern bool led;
+
 // Modes  
 extern bool menuMode;
 extern bool message_Handler;
