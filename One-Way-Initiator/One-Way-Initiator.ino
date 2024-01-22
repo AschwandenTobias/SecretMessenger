@@ -3,6 +3,13 @@
 #include "rm67162.h"
 #include <TFT_eSPI.h>
 
+#define beige       0xe718 
+#define greenLight       0xdfb8 //TODO
+#define greenDark       0x268c
+#define blue  0x845f
+#define cyan 0x67ff
+
+
 //Define the nececarry button pins
 const int buttonPin1 = 0;
 const int buttonPin2 = 21;
@@ -25,6 +32,7 @@ bool menuMode = false;
 bool message_Handler = false;
 bool chatMode = false;
 bool keyboardMode = false;
+bool startScreen = true;
 
 const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "CAPS", "ENTER", "EXIT"};
 const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
@@ -218,7 +226,7 @@ void displayKeyboard(int32_t j, uint16_t color, bool upperCase) {
     sprite.setTextColor((i == j) ? color : TFT_WHITE);
     if(upperCase) {
       sprite.drawString(String(charactersLowercase[i]), x, y, 4);
-    } else {
+    } else { //CHANGE?
       sprite.drawString(String(characters[i]), x, y, 4);
     }
 
@@ -322,16 +330,13 @@ void selectMenu() {
     if (buttonState1 != lastButtonState1) {
       if (buttonState1 == LOW) {
         menuMode = false;
-        if(j == 0) {
+        if(j == 0) { //CHANGE
           messageHandler();
-        }
-        if(j == 1) {
+        } else if(j == 1) {
           writeOwnMessage();
-        }
-        if(j == 2) {
-
-        }
-        if(j == 3) {
+        } else if(j == 2) {
+          //Write your method to display and select the pictures and call it here
+        } else if(j == 3) {
           displayChat();
         }
       }
@@ -342,10 +347,18 @@ void selectMenu() {
 
 void displayMenu(int32_t selected, uint16_t color, int32_t menuSize, char** menuItems) {
   sprite.fillSprite(TFT_BLACK);
+
+  /* TODO
+  sprite.fillRoundRect(0, 0, 536, 240, 4, beige);
+  sprite.setTextColor(TFT_BLACK);
+  */
   for(int i = 0; i < menuSize; i++) {
     if(i == selected) {
       sprite.setTextColor(color);
     }
+    /* TODO
+    sprite.fillRoundRect(20, i * 40 + 20, 20, 240, 4, beige);
+    */
     sprite.drawString(menuItems[i], 20, i * 40 + 20, 4);
     sprite.setTextColor(TFT_WHITE);
     lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
@@ -354,10 +367,20 @@ void displayMenu(int32_t selected, uint16_t color, int32_t menuSize, char** menu
 
 void displayChat() {
   chatMode = true;
-  sprite.fillSprite(TFT_BLACK);
+  /*TODO
+  sprite.fillRoundRect(0, 0, 536, 240, 4, beige);
+  sprite.setTextColor(TFT_BLACK);
+  */
+  sprite.fillSprite(TFT_BLACK); //TODO
   sprite.setTextColor(TFT_WHITE);
   for (int i = 0; i < freeSlot; i++) {
-    int32_t x = (chat[i].isSend) ? 200 : 20;
+    /*TODO
+    size_t strLen = strlen(chat[i].a);
+    int32_t y = strLen * 20 + 20;
+    */
+    int32_t x = (chat[i].isSend) ?  200 : 20; //TODO: change x pos
+    //sprite.fillRoundRect(x, y, 536, 240, greenLight);
+
     sprite.drawString(chat[i].a, x, i * 40 + 20, 4);
   }
   lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
@@ -366,32 +389,63 @@ void displayChat() {
 void messageHandler() {
   message_Handler = true;
   displayMenu(0, TFT_RED, 5, predefinedMessages);
-  delay(500);
+  delay(200); //CHANGE
   selectMessage();
+  displayChat();
 }
 
 void mainMenu() {
   j = 0;
   menuMode = true;
   displayMenu(0, TFT_RED, 4, predefinedModes);
-  delay(250);
+  delay(200);
   selectMenu();
 }
 
 void loop() {
+  //sprite.fillSprite(TFT_BLACK);
+  /* TODO
+  //sprite.fillRoundRect(0, 0, 536, 240, 4, beige);
+  int screenHeight = 240; // replace with your actual screen height
+  int textHeight = 5; // replace with your actual text height
+  int verticalPosition = (screenHeight - textHeight) / 2;
+  //sprite.setTextColor(TFT_BLACK);
+  sprite.setTextSize(textHeight);
+  //sprite.fillRoundRect(10, verticalPosition -40, 516, textHeight * 24, 8, greenDark);
+  //sprite.drawRoundRect(10, verticalPosition -40, 516, textHeight * 24, 8, TFT_BLACK);
+  sprite.setTextColor(TFT_WHITE);
+  sprite.drawString("Secret Messenger", 20, verticalPosition);
+  lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+  sprite.setTextSize(1);
+  */
+
+  //sprite.fillRectHGradient(0, 0, 536, 240, cyan, blue);
+  if(startScreen) {
+  sprite.fillSprite(TFT_BLACK);
+  sprite.setTextSize(5);
+  sprite.setTextColor(TFT_WHITE);
+  sprite.drawString("Secret Messenger", 20, 105);
+  lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+  //sprite.setTextColor(TFT_WHITE);
+  sprite.setTextSize(1);
+  }
+  
+ 
   // Read the current state of the buttons
   buttonState1 = digitalRead(buttonPin1);
   buttonState2 = digitalRead(buttonPin2);
 
   if(buttonState2 != lastButtonState2) {
     if(buttonState2 == LOW && message_Handler == false) {
+      startScreen = false;
       mainMenu();
     }
   }
   // Check if the button state has changed
   if (buttonState1 != lastButtonState1 && message_Handler == false) {
     if (buttonState1 == LOW) {
-      displayChat();
+      startScreen = false;
+      //TODO: do something, light LED?
     } 
     lastButtonState2 = buttonState2;
     lastButtonState1 = buttonState1;

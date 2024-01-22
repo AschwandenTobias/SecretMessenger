@@ -13,7 +13,7 @@ const char* characters[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K
 const char* charactersLowercase[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ",", ".", "!", "?", " ", "caps", "enter", "exit"};
 
 char* predefinedMessages[] = {"Bring mir Cola aus dem Coop mit", "Bring mir ein Mate mit", "Habe Lust auf Salziges...", "Schoggi pls <3", "Brauche nix danke!"};
-char* predefinedImageNames[] = {"Cat1", "Cat2", "Cat3"};
+char* predefinedImageNames[] = {"Cat_Flower", "Cat_Sad", "Cat_Cute"};
 int j = 0;
 String selectedMessage;
 String selectedImages;
@@ -30,7 +30,7 @@ uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 struct_message message_to_send;
 struct_message received_message;
-struct_message chat[10];
+struct_message chat[6];
 int freeSlot = 0;
 
 esp_now_peer_info_t peerInfo;

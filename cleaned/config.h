@@ -42,7 +42,7 @@ extern uint8_t broadcastAddress[];
 
 // Structured data for messages
 typedef struct struct_message {
-  char isImage;
+  bool isImage;
   char a[32];
   bool isSend;
 } struct_message;

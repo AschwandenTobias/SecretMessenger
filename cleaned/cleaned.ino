@@ -110,8 +110,15 @@ void displayPredefinedImages(int32_t j, uint16_t color) {
 }
 
 void add_to_chat(struct_message msg) {
-  chat[freeSlot] = msg;
-  freeSlot++;
+  if(freeSlot < 6) {
+    chat[freeSlot] = msg;
+    freeSlot++;
+  } else {
+    for(int i = 0; i < 5; i++) {
+      chat[i] = chat[i + 1];
+    }
+    chat[5] = msg;
+  }
   displayChat();
 }
 
@@ -340,9 +347,15 @@ void displayChat() {
   chatMode = true;
   sprite.fillSprite(TFT_BLACK);
   sprite.setTextColor(TFT_WHITE);
-  for (int i = 0; i < freeSlot; i++) {
+  for (int i = freeSlot - 1; i >= 0; i--) {
     int32_t x = (chat[i].isSend) ? 200 : 20;
-    sprite.drawString(chat[i].a, x, i * 40 + 20, 4);
+    if(chat[i].isSend) {
+      sprite.setTextColor(TFT_GREEN);
+    } else {
+      sprite.setTextColor(TFT_PINK);
+    }
+    sprite.drawString(chat[i].a, x, 240 - ((freeSlot - 1 - i) * 40 + 30), 4);
+    sprite.setTextColor(TFT_WHITE);
   }
   lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
 }
@@ -385,6 +398,14 @@ void setup() {
  
   // Set ESP32 as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
+  
+  //StartScreen
+  sprite.fillSprite(TFT_BLACK);
+  sprite.setTextSize(5);
+  sprite.setTextColor(TFT_WHITE);
+  sprite.drawString("Secret Messenger", 33, 105);
+  lcd_PushColors(0, 0, 536, 240, (uint16_t*)sprite.getPointer());
+  sprite.setTextSize(1);
 
   // Initilize ESP-NOW
   if (esp_now_init() != ESP_OK) {
